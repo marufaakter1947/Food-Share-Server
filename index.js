@@ -51,8 +51,6 @@ async function run() {
       res.send(result);
     });
 
-    
-
     // insert
     app.post("/all-foods", async (req, res) => {
       const data = req.body;
@@ -62,22 +60,30 @@ async function run() {
     });
 
     // PUT-Update
-    app.put("/my-foods/:id",async(req,res)=>{
-        const {id} = req.params
-        const data = req.body
-        // console.log(id)
-        // console.log(data)
-        const objectId = new ObjectId(id)
-        const filter = {_id: objectId}
+    app.put("/my-foods/:id", async (req, res) => {
+      const { id } = req.params;
+      const data = req.body;
+      // console.log(id)
+      // console.log(data)
+      const objectId = new ObjectId(id);
+      const filter = { _id: objectId };
 
-        const update = {
-            $set: data
-        }
+      const update = {
+        $set: data,
+      };
 
-        const result =await foodCollection.updateOne(filter, update)
-        res.send(result)
-    })
+      const result = await foodCollection.updateOne(filter, update);
+      res.send(result);
+    });
 
+    // Delete
+    app.delete("/my-foods/:id", async (req, res) => {
+      const { id } = req.params;
+      const objectId = new ObjectId(id);
+      const filter = { _id: objectId };
+      const result = await foodCollection.deleteOne(filter);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
