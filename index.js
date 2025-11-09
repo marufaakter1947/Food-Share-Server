@@ -85,6 +85,31 @@ async function run() {
       res.send(result);
     });
 
+    // // Featured Foods
+    // app.get("featured-foods", async(req,res)=>{
+
+    // })
+
+    app.get("/featured-foods", async (req, res) => {
+  try {
+    const foods = await foodCollection
+      .find({ food_status: "Available" })
+      .toArray();
+
+    // Sort based on numeric value inside "Serves X people"
+    const sorted = foods.sort((a, b) => {
+      const numA = parseInt(a.food_quantity.match(/\d+/));
+      const numB = parseInt(b.food_quantity.match(/\d+/));
+      return numB - numA; // Highest first
+    });
+
+    res.send(sorted.slice(0, 6));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Failed to load featured foods" });
+  }
+});
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
