@@ -126,6 +126,27 @@ app.get("/food-requests",async(req,res)=>{
     const result = await RequestFoodCollection.find({donator_email}).toArray()
     res.send(result)
 })
+// update request status conditionally
+app.patch("/update-request/:id", async (req, res) => {
+  const { id } = req.params;
+  const { status, foodId } = req.body;
+  const objectId = new ObjectId(id);
+
+  await RequestFoodCollection.updateOne(
+    { _id: objectId },
+    { $set: { status } }
+  );
+
+  if (status === "accepted" && foodId) {
+    const foodObjectId = new ObjectId(foodId);
+    await foodCollection.updateOne(
+      { _id: foodObjectId },
+      { $set: { food_status: "donated" } }
+    );
+  }
+
+  res.send({ success: true });
+});
 
 
     // Send a ping to confirm a successful connection
