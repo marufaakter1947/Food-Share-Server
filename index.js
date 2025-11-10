@@ -26,6 +26,7 @@ async function run() {
 
     const db = client.db("food-db");
     const foodCollection = db.collection("allFoods");
+    const RequestFoodCollection = db.collection("requests");
 
     // find
     app.get("/all-foods", async (req, res) => {
@@ -86,21 +87,17 @@ async function run() {
     });
 
     // // Featured Foods
-    // app.get("featured-foods", async(req,res)=>{
-
-    // })
-
     app.get("/featured-foods", async (req, res) => {
   try {
     const foods = await foodCollection
       .find({ food_status: "Available" })
       .toArray();
 
-    // Sort based on numeric value inside "Serves X people"
+    // Sort 
     const sorted = foods.sort((a, b) => {
       const numA = parseInt(a.food_quantity.match(/\d+/));
       const numB = parseInt(b.food_quantity.match(/\d+/));
-      return numB - numA; // Highest first
+      return numB - numA; 
     });
 
     res.send(sorted.slice(0, 6));
@@ -109,6 +106,13 @@ async function run() {
     res.status(500).send({ message: "Failed to load featured foods" });
   }
 });
+
+// Request Food
+app.post("/my-food-request", async(req,res) =>{
+    const data = req.body
+    const result= await RequestFoodCollection.insertOne(data)
+    res.send(result)
+})
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
