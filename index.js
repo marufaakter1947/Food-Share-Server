@@ -120,6 +120,13 @@ app.get("/my-requests",async(req,res) =>{
     res.send(result)
 })
 
+//get all request
+app.get("/food-requests",async(req,res)=>{
+    const donator_email = req.query.donator_email;
+    const result = await RequestFoodCollection.find({donator_email}).toArray()
+    res.send(result)
+})
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
