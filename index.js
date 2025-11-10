@@ -55,7 +55,7 @@ async function run() {
     // insert
     app.post("/all-foods", async (req, res) => {
       const data = req.body;
-      console.log(data);
+    //   console.log(data);
       const result = await foodCollection.insertOne(data);
       res.send(result);
     });
@@ -107,12 +107,24 @@ async function run() {
   }
 });
 
-// Request Food
-app.post("/my-food-request", async(req,res) =>{
-    const data = req.body
-    const result= await RequestFoodCollection.insertOne(data)
-    res.send(result)
-})
+
+
+app.post("/my-food-request", async (req, res) => {
+  try {
+    const data = req.body;
+    const result = await RequestFoodCollection.insertOne(data);
+
+    
+    const insertedRequest = await RequestFoodCollection.findOne({
+      _id: result.insertedId,
+    });
+// console.log("Inserted request:", insertedRequest);
+    res.send(insertedRequest);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Failed to save request" });
+  }
+});
 
 app.get("/my-requests",async(req,res) =>{
     const email = req.query.email
@@ -120,33 +132,15 @@ app.get("/my-requests",async(req,res) =>{
     res.send(result)
 })
 
-//get all request
-app.get("/food-requests",async(req,res)=>{
-    const donator_email = req.query.donator_email;
-    const result = await RequestFoodCollection.find({donator_email}).toArray()
-    res.send(result)
-})
-// update request status conditionally
-// app.patch("/update-request/:id", async (req, res) => {
-//   const { id } = req.params;
-//   const { status, foodId } = req.body;
-//   const objectId = new ObjectId(id);
 
-//   await RequestFoodCollection.updateOne(
-//     { _id: objectId },
-//     { $set: { status } }
-//   );
+app.get("/food-requests", async (req, res) => {
+  console.log("Query:", req.query);
+  const result = await RequestFoodCollection.find({ /* … */ }).toArray();
+  console.log("Result:", result);
+  res.send(result);
+});
 
-//   if (status === "accepted" && foodId) {
-//     const foodObjectId = new ObjectId(foodId);
-//     await foodCollection.updateOne(
-//       { _id: foodObjectId },
-//       { $set: { food_status: "donated" } }
-//     );
-//   }
 
-//   res.send({ success: true });
-// });
 // Update request status and food status
 app.patch("/update-request/:id", async (req, res) => {
   const { id } = req.params;
@@ -175,7 +169,7 @@ app.patch("/update-request/:id", async (req, res) => {
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     // console.log(
     //   "Pinged your deployment. You successfully connected to MongoDB!"
     // );
