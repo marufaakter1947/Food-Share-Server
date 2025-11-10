@@ -55,7 +55,7 @@ async function run() {
     // insert
     app.post("/all-foods", async (req, res) => {
       const data = req.body;
-    //   console.log(data);
+      //   console.log(data);
       const result = await foodCollection.insertOne(data);
       res.send(result);
     });
@@ -88,85 +88,93 @@ async function run() {
 
     // // Featured Foods
     app.get("/featured-foods", async (req, res) => {
-  try {
-    const foods = await foodCollection
-      .find({ food_status: "Available" })
-      .toArray();
+      try {
+        const foods = await foodCollection
+          .find({ food_status: "Available" })
+          .toArray();
 
-    // Sort 
-    const sorted = foods.sort((a, b) => {
-      const numA = parseInt(a.food_quantity.match(/\d+/));
-      const numB = parseInt(b.food_quantity.match(/\d+/));
-      return numB - numA; 
+        // Sort
+        const sorted = foods.sort((a, b) => {
+          const numA = parseInt(a.food_quantity.match(/\d+/));
+          const numB = parseInt(b.food_quantity.match(/\d+/));
+          return numB - numA;
+        });
+
+        res.send(sorted.slice(0, 6));
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to load featured foods" });
+      }
     });
 
-    res.send(sorted.slice(0, 6));
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Failed to load featured foods" });
-  }
-});
+    app.post("/my-food-request", async (req, res) => {
+      try {
+        const data = req.body;
+        const result = await RequestFoodCollection.insertOne(data);
 
-
-
-app.post("/my-food-request", async (req, res) => {
-  try {
-    const data = req.body;
-    const result = await RequestFoodCollection.insertOne(data);
-
-    
-    const insertedRequest = await RequestFoodCollection.findOne({
-      _id: result.insertedId,
-    });
-// console.log("Inserted request:", insertedRequest);
-    res.send(insertedRequest);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Failed to save request" });
-  }
-});
-
-app.get("/my-requests",async(req,res) =>{
-    const email = req.query.email
-    const result = await RequestFoodCollection.find({requested_by: email}).toArray()
-    res.send(result)
-})
-
-
-app.get("/food-requests", async (req, res) => {
-  console.log("Query:", req.query);
-  const result = await RequestFoodCollection.find({ /* … */ }).toArray();
-  console.log("Result:", result);
-  res.send(result);
-});
-
-
-// Update request status and food status
-app.patch("/update-request/:id", async (req, res) => {
-  const { id } = req.params;
-  const { status, foodId } = req.body;
-
-  try {
-    const requestFilter = { _id: new ObjectId(id) };
-    await RequestFoodCollection.updateOne(requestFilter, {
-      $set: { status: status },
+        const insertedRequest = await RequestFoodCollection.findOne({
+          _id: result.insertedId,
+        });
+        // console.log("Inserted request:", insertedRequest);
+        res.send(insertedRequest);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to save request" });
+      }
     });
 
+    app.get("/my-requests", async (req, res) => {
+      const email = req.query.email;
+      const result = await RequestFoodCollection.find({
+        requested_by: email,
+      }).toArray();
+      res.send(result);
+    });
 
-    if (status === "accepted" && foodId) {
-      const foodFilter = { _id: new ObjectId(foodId) };
-      await foodCollection.updateOne(foodFilter, {
-        $set: { food_status: "donated" },
-      });
-    }
+    app.get("/food-requests", async (req, res) => {
+      try {
+        const { donator_email, food_id } = req.query;
 
-    res.send({ message: "Request updated successfully" });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-});
+        if (!donator_email || !food_id) {
+          return res
+            .status(400)
+            .send({ message: "Missing donator_email or food_id" });
+        }
 
+        const result = await RequestFoodCollection.find({
+          donator_email,
+          food_id,
+        }).toArray();
 
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ message: err.message });
+      }
+    });
+
+    // Update request status and food status
+    app.patch("/update-request/:id", async (req, res) => {
+      const { id } = req.params;
+      const { status, foodId } = req.body;
+
+      try {
+        const requestFilter = { _id: new ObjectId(id) };
+        await RequestFoodCollection.updateOne(requestFilter, {
+          $set: { status: status },
+        });
+
+        if (status === "accepted" && foodId) {
+          const foodFilter = { _id: new ObjectId(foodId) };
+          await foodCollection.updateOne(foodFilter, {
+            $set: { food_status: "donated" },
+          });
+        }
+
+        res.send({ message: "Request updated successfully" });
+      } catch (err) {
+        res.status(500).send({ message: err.message });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
