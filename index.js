@@ -114,6 +114,13 @@ app.post("/my-food-request", async(req,res) =>{
     res.send(result)
 })
 
+app.get("/my-requests",async(req,res) =>{
+    const email = req.query.email
+    const result = await RequestFoodCollection.find({requested_by: email}).toArray()
+    res.send(result)
+})
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
