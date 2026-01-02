@@ -27,6 +27,8 @@ async function run() {
     const db = client.db("food-db");
     const foodCollection = db.collection("allFoods");
     const RequestFoodCollection = db.collection("requests");
+    const contactCollection = db.collection("contacts");
+
 
     // find
     app.get("/all-foods", async (req, res) => {
@@ -122,6 +124,23 @@ async function run() {
         res.status(500).send({ message: "Failed to save request" });
       }
     });
+
+    app.post("/contact", async (req, res) => {
+  try {
+    const message = {
+      name: req.body.name,
+      email: req.body.email,
+      message: req.body.message,
+      createdAt: new Date(),
+    };
+
+    const result = await contactCollection.insertOne(message);
+    res.send({ success: true, message: "Message sent successfully" });
+  } catch (error) {
+    res.status(500).send({ success: false, message: "Failed to send message" });
+  }
+});
+
 
     app.get("/my-requests", async (req, res) => {
       const email = req.query.email;
