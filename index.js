@@ -28,6 +28,85 @@ async function run() {
     const foodCollection = db.collection("allFoods");
     const RequestFoodCollection = db.collection("requests");
     const contactCollection = db.collection("contacts");
+    const userCollection = db.collection("users");
+
+    // POST - create user
+app.post("/users", async (req, res) => {
+  const { name, email, photo } = req.body;
+  try {
+    const existingUser = await userCollection.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send({ message: "User already exists" });
+    }
+    const result = await userCollection.insertOne({ name, email, photo });
+    res.send({ success: true, user: result });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// GET user by email 
+app.get("/users", async (req, res) => {
+  const email = req.query.email;
+  try {
+    const user = await userCollection.find({ email }).toArray();
+    res.send(user);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+    // PUT - update user by _id
+// app.put("/users/:id", async (req, res) => {
+//   const { id } = req.params;
+//   const data = req.body; // name, bio, photo, etc.
+//   try {
+//     const result = await userCollection.updateOne(
+//       { _id: new ObjectId(id) },
+//       { $set: data }
+//     );
+//     if (result.modifiedCount > 0) {
+//       const updatedUser = await userCollection.findOne({ _id: new ObjectId(id) });
+//       res.send(updatedUser);
+//     } else {
+//       res.status(404).send({ message: "User not found or no changes made" });
+//     }
+//   } catch (err) {
+//     res.status(500).send({ message: err.message });
+//   }
+// });
+app.put("/users/:id", async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
+
+  try {
+    const filter = { _id: new ObjectId(id) };
+
+    const result = await userCollection.updateOne(
+      filter,
+      { $set: data }
+    );
+
+    const updatedUser = await userCollection.findOne(filter);
+
+    if (!updatedUser) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    res.send(updatedUser);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post("/register", async (req, res) => {
+  const { name, email, password, photo } = req.body;
+  try {
+    const result = await userCollection.insertOne({ name, email, password, photo });
+    res.send({ success: true, user: result });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
 
 
     // find
@@ -142,13 +221,35 @@ async function run() {
 });
 
 
-    app.get("/my-requests", async (req, res) => {
-      const email = req.query.email;
-      const result = await RequestFoodCollection.find({
-        requested_by: email,
-      }).toArray();
-      res.send(result);
-    });
+app.get("/my-requests", async (req, res) => {
+  const email = req.query.email;
+
+  try {
+    const requests = await RequestFoodCollection.find({ requested_by: email }).toArray();
+
+    const enrichedRequests = await Promise.all(
+      requests.map(async (reqItem) => {
+        // Fetch food from allFoods collection
+        const food = await foodCollection.findOne({ _id: new ObjectId(reqItem.food_id) });
+
+        // Attach actual food_status
+        return {
+          ...reqItem,
+          food_status: food?.food_status?.toLowerCase() || "available", // default available
+          food_image: food?.food_image,
+          food_name: food?.food_name,
+          food_quantity: food?.food_quantity,
+          expire_date: food?.expire_date,
+        };
+      })
+    );
+
+    res.send(enrichedRequests);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 
     app.get("/food-requests", async (req, res) => {
       try {
