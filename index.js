@@ -55,25 +55,7 @@ app.get("/users", async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 });
-    // PUT - update user by _id
-// app.put("/users/:id", async (req, res) => {
-//   const { id } = req.params;
-//   const data = req.body; // name, bio, photo, etc.
-//   try {
-//     const result = await userCollection.updateOne(
-//       { _id: new ObjectId(id) },
-//       { $set: data }
-//     );
-//     if (result.modifiedCount > 0) {
-//       const updatedUser = await userCollection.findOne({ _id: new ObjectId(id) });
-//       res.send(updatedUser);
-//     } else {
-//       res.status(404).send({ message: "User not found or no changes made" });
-//     }
-//   } catch (err) {
-//     res.status(500).send({ message: err.message });
-//   }
-// });
+ 
 app.put("/users/:id", async (req, res) => {
   const { id } = req.params;
   const data = req.body;
